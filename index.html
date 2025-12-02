@@ -54,10 +54,10 @@
             <h1 class="text-4xl font-extrabold text-gray-900 mb-2">Polling Video Terbaik 🏆</h1>
             <p class="text-xl text-gray-600">Pilih video favoritmu! Satu nama, email, & peran **terverifikasi** hanya dapat memberikan satu like.</p>
             <div id="user-info-display" class="mt-4 text-sm text-gray-500">
-                <!-- User ID will be displayed here -->
+                <!-- Informasi Pengguna akan ditampilkan di sini -->
             </div>
             <div id="app-id-display" class="mt-1 text-xs text-gray-400">
-                <!-- App ID will be displayed here -->
+                <!-- ID Aplikasi akan ditampilkan di sini -->
             </div>
         </header>
 
@@ -111,7 +111,7 @@
 
         <!-- Container Kartu Video -->
         <div id="video-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Video cards will be injected here -->
+            <!-- Kartu video akan diinjeksi di sini -->
         </div>
     </div>
 
@@ -125,20 +125,19 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         
         // ====================================================================
-        // !!! PENTING: GANTI DENGAN KONFIGURASI FIREBASE ANDA SENDIRI !!!
-        // Ganti nilai di bawah ini dengan konfigurasi dari Firebase Console Anda
-        // sebelum di-deploy ke GitHub Pages. JANGAN HAPUS KUTIPAN GANDA.
+        // KONFIGURASI FIREBASE ANDA (KUNCI LENGKAP DARI FIREBASE CONSOLE)
+        // Kunci ini diekstrak dari gambar konfigurasi Anda
         // ====================================================================
         const githubFirebaseConfig = {
-             apiKey: "AIzaSyAuf_coM6BxA2k1zEIRYYLjbMsb3CuTYBM", 
-             authDomain: "polling-a4ec5.firebaseapp.com",
-             projectId: "polling-a4ec5",
-             storageBucket: "polling-a4ec5.firebasestorage.app",
-             messagingSenderId: "20329991801",
-             appId: "1:203299918012:web:a46e4820bd1e3618d740b9"
+             apiKey: "AIzaSyAuf_coM6BxA2k1zElRYYLjbMsb3CuTYBM", 
+             authDomain: "polling-a4ec5.firebaseapp.com", 
+             projectId: "polling-a4ec5", 
+             storageBucket: "polling-a4ec5.appspot.com", 
+             messagingSenderId: "203299918012", 
+             appId: "1:203299918012:web:a46e4820bd1e3618d740b9" 
         };
         
-        // PENTING: Gunakan konfigurasi Canvas jika ada, atau gunakan konfigurasi GitHub placeholder
+        // PENTING: Gunakan konfigurasi Canvas jika ada, atau gunakan konfigurasi GitHub yang sudah diisi
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : JSON.stringify(githubFirebaseConfig));
         
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -155,58 +154,59 @@
         let userId = null;
         let userData = null; // { name: '...', email: '...', voterRole: '...', voterClass: '...' }
         
-        // --- FUNGSI BANTUAN UNTUK LINK YOUTUBE ---
-        
+        // ====================================================================
+        // Fungsi utilitas untuk memproses link video dan thumbnail
+        // ====================================================================
+
         /**
-         * Mengambil ID video dari URL penuh (baik tontonan maupun embed).
-         * @param {string} url - URL video.
-         * @returns {string|null} ID video.
+         * Mengestrak ID YouTube dari berbagai format URL dan mengembalikannya dalam format embed.
+         * @param {string} urlOrId - URL YouTube, link embed, atau ID video.
+         * @returns {string} Link embed YouTube yang valid.
          */
-        function extractVideoId(url) {
-            let videoId = null;
-            // Pattern untuk link watch: ?v=VIDEO_ID
-            let match = url.match(/(?:\?v=|embed\/|youtu\.be\/)([^&"']+)/);
-            if (match && match[1]) {
-                videoId = match[1];
+        function getYoutubeEmbedUrl(urlOrId) {
+            let id = urlOrId;
+            const embedPrefix = "https://www.youtube.com/embed/";
+
+            // Cek jika ini URL tontonan standar
+            const watchMatch = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/))([^&?]+)/i);
+            if (watchMatch && watchMatch[1]) {
+                id = watchMatch[1];
             }
-            return videoId;
-        }
-
-        /**
-         * Membuat URL embed YouTube dari ID video.
-         * @param {string} videoId - ID video (11 karakter).
-         * @returns {string} URL embed.
-         */
-        function getYoutubeEmbedUrl(videoId) {
-            return `https://www.youtube.com/embed/${videoId}`;
+            
+            // Cek jika ini sudah link embed
+            if (urlOrId.startsWith(embedPrefix)) {
+                return urlOrId;
+            }
+            
+            return `${embedPrefix}${id}`;
         }
         
         /**
-         * Membuat URL thumbnail kualitas tinggi dari ID video.
-         * @param {string} videoId - ID video (11 karakter).
-         * @returns {string} URL thumbnail.
+         * Mendapatkan URL thumbnail kualitas tinggi dari ID video YouTube.
+         * @param {string} urlOrId - URL YouTube, link embed, atau ID video.
+         * @returns {string} Link thumbnail.
          */
-        function getYoutubeThumbnailUrl(videoId) {
-            // Menggunakan maxresdefault (kualitas tertinggi) sebagai default
-            return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        function getYoutubeThumbnailUrl(urlOrId) {
+            let id = urlOrId;
+            const watchMatch = urlOrId.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|v\/))([^&?]+)/i);
+            if (watchMatch && watchMatch[1]) {
+                id = watchMatch[1];
+            }
+            return `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
         }
-
+        
         // ====================================================================
         // START EDIT DI SINI UNTUK MEMASUKKAN DATA VIDEO BARU ANDA
+        // Gunakan ID video YouTube atau link penuh. Kode akan mengkonversinya.
         // ====================================================================
-        
-        // PENTING: Sekarang, Anda cukup memasukkan ID VIDEO YouTube, atau link penuh (watch/embed).
-        // Fungsi akan otomatis mengubahnya menjadi format yang benar.
         
         let videos = [
             { 
-                // Gunakan ID unik untuk Firestore
                 id: 'video_satu', 
                 title: 'Perjalanan ke Himalaya (Contoh Video 1)', 
                 creator: 'Tim Petualang', 
                 likes: 0, 
-                // MASUKKAN ID VIDEO DI SINI, BUKAN LINK LENGKAP
-                videoId: 'g8J18uB69sA' 
+                videoId: 'g8J18uB69sA' // Cukup masukkan ID video
             },
             { 
                 id: 'video_dua', 
@@ -220,19 +220,17 @@
                 title: 'Konser Musik Jazz Malam Hari (Contoh Video 3)', 
                 creator: 'Band Senja', 
                 likes: 0, 
-                videoId: 'lGb8vxFRNII&list=RDlGb8vxFRNII&start_radio=1'
+                videoId: '5qap5aO4i9A'
             },
-            // TAMBAHKAN VIDEO BARU ANDA DI SINI (Contoh):
-            /*
-            { 
-                id: 'video_baru', // ID HARUS UNIK, contoh: 'kelompok_5', 'video_a'
-                title: 'Judul Video Anda', 
-                creator: 'Nama Kelompok/Pembuat', 
-                likes: 0, 
-                videoId: 'ID_VIDEO_ANDA_DISINI'
-            },
-            */
+            // Tambahkan video baru di sini, gunakan videoId: 'ID_VIDEO_YOUTUBE'
         ];
+        
+        // Tambahkan properti url dan thumbnail secara dinamis
+        videos = videos.map(v => ({
+            ...v,
+            url: getYoutubeEmbedUrl(v.videoId),
+            thumbnail: getYoutubeThumbnailUrl(v.videoId)
+        }));
         
         // ====================================================================
         // END EDIT DI SINI. JANGAN UBAH KODE DI BAWAH INI.
@@ -301,19 +299,15 @@
             // Warna ikon hati: merah jika sudah divoting, abu-abu jika belum
             const heartColorClass = isVoted ? 'text-red-600' : 'text-gray-400';
 
-            // Gunakan properti videoId yang sudah diproses di initializeVideos
-            const videoUrl = video.url;
-            const thumbnailUrl = video.thumbnail;
-
             return `
                 <div id="card-${video.id}" class="video-card bg-white rounded-xl shadow-lg p-5 border-4 ${winnerClass} transition duration-300">
                     <iframe 
                         class="w-full aspect-video rounded-lg mb-4" 
-                        src="${videoUrl}" 
+                        src="${video.url}" 
                         frameborder="0" 
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                         allowfullscreen
-                        onerror="this.src='${thumbnailUrl}'"
+                        onerror="this.src='${video.thumbnail}'"
                     ></iframe>
                     
                     <div class="flex items-start justify-between">
@@ -611,17 +605,6 @@
          */
         async function initializeVideos() {
             const videoCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'videos');
-            
-            // Lakukan pre-processing data lokal sebelum inisialisasi
-            videos = videos.map(v => {
-                const videoId = extractVideoId(v.videoId) || v.videoId;
-                return {
-                    ...v,
-                    url: getYoutubeEmbedUrl(videoId),
-                    thumbnail: getYoutubeThumbnailUrl(videoId),
-                };
-            });
-            
             for (const video of videos) {
                 const videoDocRef = doc(videoCollectionRef, video.id);
                 try {
@@ -707,7 +690,7 @@
                         userId = user.uid;
                         userInfoDisplay.innerHTML = `Anda masuk (Sesi ID): <span class="font-semibold text-blue-600">${userId.substring(0, 8)}...</span>. Harap lengkapi Verifikasi Diri (Login Voting) di bawah.`;
                         
-                        // Inisialisasi video (otomatis memproses URL/Thumbnail)
+                        // Inisialisasi video
                         await initializeVideos();
                         
                         // Lanjutkan ke pengambilan data voter
